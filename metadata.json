@@ -1,6 +1,45 @@
 {
-  "name": "Worlds Simplest Task Planner",
-  "description": "A high-performance daily task manager with integrated AI insights, progress visualization, and intelligent task breakdown capabilities using Gemini.",
+  "name": "Zenith Task Planner",
+  "short_name": "Zenith",
+  "description": "A high-performance daily task manager with integrated AI insights.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#4f46e5",
+  "orientation": "portrait",
+  "scope": "./",
+  "categories": [
+    "productivity",
+    "utilities"
+  ],
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/906/906334.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/906/906334.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Add New Task",
+      "short_name": "New Task",
+      "description": "Quickly jump to task entry",
+      "url": "./index.html",
+      "icons": [
+        {
+          "src": "https://cdn-icons-png.flaticon.com/512/906/906334.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ],
   "requestFramePermissions": [
     "microphone"
   ]

@@ -1,5 +1,5 @@
 {
-  "name": "Zenith Task Planner",
+  "name": "Worlds Simplest Task Planner",
   "description": "A high-performance daily task manager with integrated AI insights, progress visualization, and intelligent task breakdown capabilities using Gemini.",
   "requestFramePermissions": [
     "microphone"

@@ -2,6 +2,7 @@
 import React from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { DailyStats } from '../types';
+import DailyPieChart from './DailyPieChart';
 
 interface ProgressChartProps {
   data: DailyStats[];
@@ -16,8 +17,16 @@ const ProgressChart: React.FC<ProgressChartProps> = ({ data, lifetime }) => {
     ? Math.round((lifetime.completed / lifetime.total) * 100) 
     : 0;
 
+  // Today's specific stats from the data array (last element)
+  const todayStats = data[data.length - 1] || { completed: 0, total: 0 };
+
   return (
-    <div className="w-full mt-4">
+    <div className="w-full mt-2">
+      {/* Today's Focus Pie Chart */}
+      <section className="mb-10 bg-slate-50/50 rounded-2xl p-4 border border-slate-100">
+        <DailyPieChart completed={todayStats.completed} total={todayStats.total} />
+      </section>
+
       {/* Lifetime Achievements Row */}
       <div className="grid grid-cols-2 gap-4 mb-8">
         <div className="bg-indigo-50 p-4 rounded-xl border border-indigo-100">
@@ -30,9 +39,9 @@ const ProgressChart: React.FC<ProgressChartProps> = ({ data, lifetime }) => {
         </div>
       </div>
 
-      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-4">Last 7 Days Activity</p>
+      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-4">7-Day Activity</p>
       
-      <div className="h-48 w-full">
+      <div className="h-40 w-full">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={data}>
             <defs>

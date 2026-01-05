@@ -1,45 +1,28 @@
 
 import { GoogleGenAI, Type } from "@google/genai";
-import { Task, AIInsights } from "../types";
+import { Habit, DailyMetrics, AIInsights } from "../types";
 
-export const getTaskBreakdown = async (taskText: string): Promise<string[]> => {
-  try {
-    // Create instance inside the function to ensure the latest process.env.API_KEY is used
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
-    const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
-      contents: `Break down this task into 3-5 actionable sub-tasks: "${taskText}"`,
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.ARRAY,
-          items: { type: Type.STRING }
-        }
-      }
-    });
-    return JSON.parse(response.text || "[]");
-  } catch (error) {
-    console.error("Gemini breakdown error:", error);
-    return [];
-  }
-};
-
-export const getDailyInsights = async (tasks: Task[]): Promise<AIInsights> => {
-  if (tasks.length === 0) {
+export const getHabitInsights = async (habits: Habit[], metrics: DailyMetrics[]): Promise<AIInsights> => {
+  if (habits.length === 0) {
     return {
       productivityScore: 0,
-      summary: "Add some tasks to start getting AI insights!",
-      suggestions: ["Start by listing your top 3 goals for today."]
+      summary: "Add your core protocols to start your habit-forming journey.",
+      suggestions: ["Set a screen time limit.", "Add a morning routine."]
     };
   }
 
-  const taskSummary = tasks.map(t => `${t.text} (${t.completed ? 'Completed' : 'Pending'})`).join(', ');
+  const habitSummary = habits.map(h => `${h.name}: ${h.completedDays.length}/${h.goal} days`).join(', ');
+  const metricSummary = metrics.slice(-7).map(m => `Date: ${m.date}, Screen: ${m.screenTime}min, Mood: ${m.mood}/10`).join(' | ');
   
   try {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+    // Use process.env.API_KEY directly for initialization as per guidelines
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
-      contents: `Analyze these tasks and provide productivity insights: ${taskSummary}`,
+      contents: `You are a high-performance life coach. Analyze this month's data and metrics. 
+      Habits: ${habitSummary}. 
+      Recent Metrics: ${metricSummary}.
+      Provide a productivity score (0-100), a concise summary, and 3 actionable self-correction suggestions.`,
       config: {
         responseMimeType: "application/json",
         responseSchema: {
@@ -56,13 +39,14 @@ export const getDailyInsights = async (tasks: Task[]): Promise<AIInsights> => {
         }
       }
     });
+    // response.text is a property, not a method; extracting text for JSON parsing
     return JSON.parse(response.text || "{}");
   } catch (error) {
     console.error("Gemini insights error:", error);
     return {
       productivityScore: 0,
-      summary: "Could not generate insights at this time.",
-      suggestions: ["Check your internet connection and API key status."]
+      summary: "Coach is offline. Keep pushing through your protocols!",
+      suggestions: ["Drink more water.", "Review your monthly goals manually."]
     };
   }
 };

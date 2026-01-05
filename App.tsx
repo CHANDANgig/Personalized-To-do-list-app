@@ -1,11 +1,14 @@
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Task, Priority, DailyStats, User } from './types';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Habit, DailyMetrics, User } from './types';
 import Header from './components/Header';
-import TaskInput from './components/TaskInput';
-import TaskList from './components/TaskList';
+import HabitGrid from './components/HabitGrid';
+import MetricsInput from './components/MetricsInput';
 import ProgressChart from './components/ProgressChart';
 import AIPanel from './components/AIPanel';
+import InstallBanner from './components/InstallBanner';
+import DailyPieChart from './components/DailyPieChart';
+import WeeklyHabitView from './components/WeeklyHabitView';
 
 const App: React.FC = () => {
   const [user, setUser] = useState<User | null>(() => {
@@ -13,203 +16,220 @@ const App: React.FC = () => {
     return saved ? JSON.parse(saved) : null;
   });
   
-  const [tasks, setTasks] = useState<Task[]>([]);
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [habits, setHabits] = useState<Habit[]>([]);
+  const [metrics, setMetrics] = useState<DailyMetrics[]>([]);
   const [isAIOpen, setIsAIOpen] = useState(false);
+  const [isWeeklyViewOpen, setIsWeeklyViewOpen] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [isStandalone, setIsStandalone] = useState(false);
 
-  // Load tasks when user changes
-  useEffect(() => {
-    const storageKey = user ? `zenith_tasks_${user.id}` : 'zenith_tasks_guest';
-    const saved = localStorage.getItem(storageKey);
-    setTasks(saved ? JSON.parse(saved) : []);
-  }, [user]);
+  const storageKey = user ? `zenith_habits_${user.id}` : 'zenith_habits_guest';
+  const metricsKey = user ? `zenith_metrics_${user.id}` : 'zenith_metrics_guest';
 
-  // Save tasks and simulate cloud sync
   useEffect(() => {
-    const storageKey = user ? `zenith_tasks_${user.id}` : 'zenith_tasks_guest';
-    localStorage.setItem(storageKey, JSON.stringify(tasks));
-    
+    const checkStandalone = () => {
+      const isStandaloneMode = window.matchMedia('(display-mode: standalone)').matches 
+        || (window.navigator as any).standalone;
+      setIsStandalone(isStandaloneMode);
+    };
+    checkStandalone();
+  }, []);
+
+  useEffect(() => {
+    const savedHabits = localStorage.getItem(storageKey);
+    const savedMetrics = localStorage.getItem(metricsKey);
+    if (savedHabits) setHabits(JSON.parse(savedHabits));
+    if (savedMetrics) setMetrics(JSON.parse(savedMetrics));
+  }, [storageKey, metricsKey]);
+
+  useEffect(() => {
+    localStorage.setItem(storageKey, JSON.stringify(habits));
+    localStorage.setItem(metricsKey, JSON.stringify(metrics));
     if (user) {
       setIsSyncing(true);
-      const timer = setTimeout(() => setIsSyncing(false), 1500);
+      const timer = setTimeout(() => setIsSyncing(false), 800);
       return () => clearTimeout(timer);
     }
-  }, [tasks, user]);
+  }, [habits, metrics, storageKey, metricsKey, user]);
 
-  const handleLogin = useCallback(() => {
-    // In a real environment, this would call window.google.accounts.id.prompt()
-    // For this demonstration, we'll simulate the Google Auth result
-    const mockUser: User = {
-      id: 'google_123456',
-      name: 'Alex Johnson',
-      email: 'alex.j@gmail.com',
-      picture: 'https://picsum.photos/id/64/100/100'
-    };
-    setUser(mockUser);
-    localStorage.setItem('zenith_user', JSON.stringify(mockUser));
-  }, []);
-
-  const handleLogout = useCallback(() => {
-    setUser(null);
-    localStorage.removeItem('zenith_user');
-  }, []);
-
-  const playSuccessSound = useCallback(() => {
-    const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2013/2013-preview.mp3');
-    audio.volume = 0.4;
-    audio.play().catch(() => {});
-  }, []);
-
-  const addTask = useCallback((text: string, priority: Priority = Priority.MEDIUM) => {
-    const newTask: Task = {
+  const addHabit = (name: string, goal: number = 20) => {
+    const newHabit: Habit = {
       id: crypto.randomUUID(),
-      text,
-      completed: false,
-      priority,
+      name,
+      goal,
+      completedDays: [],
       category: 'General',
-      createdAt: Date.now(),
+      createdAt: Date.now()
     };
-    setTasks(prev => [newTask, ...prev]);
-  }, []);
+    setHabits([...habits, newHabit]);
+  };
 
-  const toggleTask = useCallback((id: string) => {
-    setTasks(prev => {
-      const taskIndex = prev.findIndex(t => t.id === id);
-      if (taskIndex === -1) return prev;
-      
-      const isBecomingCompleted = !prev[taskIndex].completed;
-      if (isBecomingCompleted) {
-        playSuccessSound();
+  const toggleHabitDay = (habitId: string, day: number) => {
+    setHabits(prev => prev.map(h => {
+      if (h.id === habitId) {
+        const isSet = h.completedDays.includes(day);
+        const newDays = isSet 
+          ? h.completedDays.filter(d => d !== day)
+          : [...h.completedDays, day];
+        return { ...h, completedDays: newDays };
       }
+      return h;
+    }));
+  };
 
-      return prev.map((task, index) => 
-        index === taskIndex 
-          ? { ...task, completed: !task.completed, completedAt: !task.completed ? Date.now() : undefined } 
-          : task
-      );
+  const updateMetrics = (newMetric: DailyMetrics) => {
+    setMetrics(prev => {
+      const filtered = prev.filter(m => m.date !== newMetric.date);
+      return [...filtered, newMetric];
     });
-  }, [playSuccessSound]);
+  };
 
-  const deleteTask = useCallback((id: string) => {
-    setTasks(prev => prev.filter(task => task.id !== id));
-  }, []);
+  const deleteHabit = (id: string) => {
+    setHabits(habits.filter(h => h.id !== id));
+  };
 
-  const editTask = useCallback((id: string, newText: string) => {
-    setTasks(prev => prev.map(task => 
-      task.id === id ? { ...task, text: newText } : task
-    ));
-  }, []);
+  const handlePrint = () => {
+    window.print();
+  };
 
-  const statsData: DailyStats[] = useMemo(() => {
-    const days = 7;
-    const result: DailyStats[] = [];
-    const now = new Date();
-    
-    for (let i = days - 1; i >= 0; i--) {
-      const d = new Date(now);
-      d.setDate(d.getDate() - i);
-      const dateStr = d.toLocaleDateString('en-US', { weekday: 'short' });
-      
-      const dayTasksCount = tasks.filter(t => {
-        const tDate = new Date(t.createdAt);
-        return tDate.toDateString() === d.toDateString();
-      }).length;
+  const daysInMonth = useMemo(() => {
+    return new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
+  }, [currentDate]);
 
-      const completedCount = tasks.filter(t => {
-        if (!t.completedAt) return false;
-        const cDate = new Date(t.completedAt);
-        return cDate.toDateString() === d.toDateString();
-      }).length;
+  const todayProgress = useMemo(() => {
+    const todayNum = new Date().getDate();
+    const completedToday = habits.filter(h => h.completedDays.includes(todayNum)).length;
+    return {
+      completed: completedToday,
+      total: habits.length
+    };
+  }, [habits]);
 
-      result.push({
-        date: dateStr,
-        completed: completedCount,
-        total: dayTasksCount
-      });
-    }
-    return result;
-  }, [tasks]);
-
-  const lifetimeStats = useMemo(() => ({
-    total: tasks.length,
-    completed: tasks.filter(t => t.completed).length
-  }), [tasks]);
+  const monthName = currentDate.toLocaleString('default', { month: 'long' });
+  const year = currentDate.getFullYear();
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 pb-20 md:pb-0">
+    <div className="min-h-screen bg-slate-50 text-slate-900 pb-20 print:bg-white print:pb-0">
       <Header 
         onOpenAI={() => setIsAIOpen(true)} 
         user={user}
-        onLogin={handleLogin}
-        onLogout={handleLogout}
+        onLogin={() => setUser({ id: 'u1', name: 'Alex', email: 'a@a.com', picture: 'https://picsum.photos/100' })}
+        onLogout={() => setUser(null)}
         isSyncing={isSyncing}
+        canInstall={!!deferredPrompt && !isStandalone}
+        onInstall={() => deferredPrompt?.prompt()}
       />
       
-      <main className="max-w-6xl mx-auto px-4 py-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 space-y-8">
-          <section className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
-            <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-              <span className="w-2 h-6 bg-indigo-600 rounded-full"></span>
-              Plan Your Day
-            </h2>
-            <TaskInput onAdd={addTask} />
-          </section>
-
-          <section>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold flex items-center gap-2">
-                <span className="w-2 h-6 bg-emerald-500 rounded-full"></span>
-                My Focus
-              </h2>
-              <span className="text-sm font-medium text-slate-500">
-                {lifetimeStats.completed} / {lifetimeStats.total} Total Done
-              </span>
+      <main className="max-w-[1400px] mx-auto px-4 py-8 space-y-12">
+        
+        {/* ORDER 1: TODAY'S PROTOCOL COMPLIANCE */}
+        <section className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-1 bg-white rounded-3xl p-8 shadow-xl border border-slate-100 flex flex-col items-center justify-center text-center">
+            <h3 className="text-sm font-black uppercase tracking-widest text-slate-400 mb-6 flex items-center gap-2">
+              <span className="w-2 h-4 bg-emerald-500 rounded-full"></span>
+              Today's Protocol Compliance
+            </h3>
+            <DailyPieChart completed={todayProgress.completed} total={todayProgress.total} />
+            <div className="mt-4 px-6 py-2 bg-emerald-50 text-emerald-700 rounded-full text-xs font-black uppercase tracking-wider">
+              {todayProgress.completed === todayProgress.total && todayProgress.total > 0 ? "Perfect Score!" : "Stay Focused"}
             </div>
-            <TaskList 
-              tasks={tasks} 
-              onToggle={toggleTask} 
-              onDelete={deleteTask} 
-              onEdit={editTask}
-            />
-          </section>
-        </div>
-
-        <div className="space-y-8">
-          <section className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 h-fit">
-            <h2 className="text-xl font-semibold mb-6 flex items-center gap-2">
-              <span className="w-2 h-6 bg-amber-500 rounded-full"></span>
-              Analytics
-            </h2>
-            <ProgressChart data={statsData} lifetime={lifetimeStats} />
-          </section>
-
-          <section className="bg-gradient-to-br from-indigo-600 to-violet-700 rounded-2xl p-6 shadow-lg text-white">
-            <div className="flex items-start justify-between">
-              <div>
-                <h3 className="text-lg font-bold mb-2">Gemini Insight</h3>
-                <p className="text-indigo-100 text-sm mb-4">
-                  Let AI optimize your schedule based on your current workload.
-                </p>
-              </div>
-              <div className="bg-white/20 p-2 rounded-lg">
-                <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
-              </div>
+          </div>
+          
+          <div className="lg:col-span-2 bg-gradient-to-br from-indigo-600 to-violet-700 rounded-3xl p-8 shadow-xl text-white flex flex-col justify-between">
+            <div>
+              <h3 className="text-2xl font-black mb-4 flex items-center gap-2">
+                <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M13 10V3L4 14h7v7l9-11h-7z" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"/></svg>
+                Gemini Performance Coach
+              </h3>
+              <p className="text-indigo-100 text-lg leading-relaxed max-w-xl">
+                Ready to optimize. Your protocols, screen time, and energy trends have been cross-referenced. Open the session to see tactical adjustments for the week.
+              </p>
             </div>
             <button 
               onClick={() => setIsAIOpen(true)}
-              className="w-full bg-white text-indigo-600 font-semibold py-2.5 rounded-xl hover:bg-indigo-50 transition-all shadow-md active:scale-95"
+              className="mt-8 w-fit bg-white text-indigo-600 font-bold px-8 py-4 rounded-2xl hover:bg-indigo-50 transition-all shadow-lg active:scale-95"
             >
-              Consult Gemini AI
+              Start Coaching Session
             </button>
-          </section>
-        </div>
+          </div>
+        </section>
+
+        {/* ORDER 2: PROTOCOLS (HABIT GRID) */}
+        <section className="bg-white rounded-3xl p-8 shadow-sm border border-slate-100 overflow-hidden">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+            <div className="flex items-center gap-4">
+              <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tight">{monthName} {year} Protocols</h2>
+              <div className="flex gap-2">
+                <button 
+                  onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))}
+                  className="p-2 hover:bg-slate-100 rounded-xl"
+                >
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M15 19l-7-7 7-7" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"/></svg>
+                </button>
+                <button 
+                  onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))}
+                  className="p-2 hover:bg-slate-100 rounded-xl"
+                >
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M9 5l7 7-7 7" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"/></svg>
+                </button>
+              </div>
+            </div>
+            <button 
+              onClick={handlePrint}
+              className="flex items-center justify-center gap-2 px-6 py-3 bg-slate-900 text-white font-bold rounded-2xl hover:bg-slate-800 transition-all"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"/></svg>
+              PDF Export
+            </button>
+          </div>
+          <HabitGrid 
+            habits={habits} 
+            daysInMonth={daysInMonth} 
+            onToggle={toggleHabitDay} 
+            onAdd={addHabit}
+            onDelete={deleteHabit}
+          />
+        </section>
+
+        {/* ORDER 3: PERFORMANCE ANALYTICS */}
+        <section className="bg-white rounded-3xl p-8 shadow-sm border border-slate-100">
+          <ProgressChart 
+            habits={habits} 
+            metrics={metrics} 
+            daysInMonth={daysInMonth} 
+            onWeeklyChartClick={() => setIsWeeklyViewOpen(true)}
+          />
+        </section>
+
+        {/* ORDER 4 & 5: QUANTIFIED SELF & SCREEN TIME */}
+        <section className="bg-white rounded-3xl p-8 shadow-sm border border-slate-100">
+           <MetricsInput onUpdate={updateMetrics} currentMetrics={metrics} />
+        </section>
+
       </main>
 
+      <InstallBanner isVisible={!!deferredPrompt && !isStandalone} onInstall={() => deferredPrompt?.prompt()} />
+
       {isAIOpen && (
-        <AIPanel tasks={tasks} onClose={() => setIsAIOpen(false)} />
+        <AIPanel habits={habits} metrics={metrics} onClose={() => setIsAIOpen(false)} />
       )}
+
+      {isWeeklyViewOpen && (
+        <WeeklyHabitView habits={habits} onClose={() => setIsWeeklyViewOpen(false)} />
+      )}
+
+      <style>{`
+        @media print {
+          body { background: white !important; }
+          .print-hidden { display: none !important; }
+          header { display: none !important; }
+          .bg-white { border: 1px solid #e2e8f0 !important; box-shadow: none !important; }
+          .max-w-[1400px] { max-width: 100% !important; width: 100% !important; margin: 0 !important; padding: 0 !important; }
+          main { padding: 0 !important; }
+        }
+      `}</style>
     </div>
   );
 };

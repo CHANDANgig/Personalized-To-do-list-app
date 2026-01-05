@@ -5,14 +5,29 @@ export enum Priority {
   HIGH = 'HIGH'
 }
 
+// Added Task interface to fix missing import errors in related components
 export interface Task {
   id: string;
   text: string;
   completed: boolean;
   priority: Priority;
+}
+
+export interface Habit {
+  id: string;
+  name: string;
+  goal: number; // monthly target
+  completedDays: number[]; // Array of day numbers (1-31)
   category: string;
   createdAt: number;
-  completedAt?: number;
+}
+
+export interface DailyMetrics {
+  date: string; // YYYY-MM-DD
+  screenTime: number; // minutes
+  mood: number; // 1-10
+  energy: number; // 1-10
+  achievement?: string;
 }
 
 export interface DailyStats {

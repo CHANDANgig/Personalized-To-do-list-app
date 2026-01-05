@@ -8,9 +8,11 @@ interface HeaderProps {
   onLogin: () => void;
   onLogout: () => void;
   isSyncing: boolean;
+  canInstall: boolean;
+  onInstall: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ onOpenAI, user, onLogin, onLogout, isSyncing }) => {
+const Header: React.FC<HeaderProps> = ({ onOpenAI, user, onLogin, onLogout, isSyncing, canInstall, onInstall }) => {
   const [showHelp, setShowHelp] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
 
@@ -35,6 +37,11 @@ const Header: React.FC<HeaderProps> = ({ onOpenAI, user, onLogin, onLogout, isSy
         console.log('Error sharing:', err);
       }
     }
+  };
+
+  const handleDirectInstall = () => {
+    onInstall();
+    setShowHelp(false);
   };
 
   return (
@@ -64,6 +71,18 @@ const Header: React.FC<HeaderProps> = ({ onOpenAI, user, onLogin, onLogout, isSy
           </div>
           
           <div className="flex items-center gap-2 md:gap-4">
+            {canInstall && (
+              <button 
+                onClick={onInstall}
+                className="hidden sm:flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-xl text-xs font-bold hover:bg-emerald-700 transition-all shadow-md shadow-emerald-100 animate-pulse"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1M7 10l5 5 5-5M12 3v12" />
+                </svg>
+                Install
+              </button>
+            )}
+
             <button 
               onClick={() => setShowHelp(true)}
               className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all"
@@ -122,8 +141,8 @@ const Header: React.FC<HeaderProps> = ({ onOpenAI, user, onLogin, onLogout, isSy
             <div className="p-6 border-b border-slate-100 shrink-0">
               <div className="flex justify-between items-start">
                 <div>
-                  <h2 className="text-2xl font-black text-slate-900 leading-tight">Install on Phone</h2>
-                  <p className="text-slate-500 text-sm mt-1">Move your tasks from desktop to mobile.</p>
+                  <h2 className="text-2xl font-black text-slate-900 leading-tight">Install Zenith</h2>
+                  <p className="text-slate-500 text-sm mt-1">Choose the easiest way to get Zenith on your phone.</p>
                 </div>
                 <button onClick={() => setShowHelp(false)} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
                   <svg className="w-6 h-6 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
@@ -132,61 +151,70 @@ const Header: React.FC<HeaderProps> = ({ onOpenAI, user, onLogin, onLogout, isSy
             </div>
 
             <div className="flex-1 overflow-y-auto p-6 space-y-8 hide-scrollbar">
-              {/* QR Code Section */}
-              <section className="bg-indigo-600 rounded-3xl p-8 text-white text-center shadow-xl shadow-indigo-200">
-                <div className="bg-white p-3 rounded-2xl inline-block shadow-inner mb-4">
-                  <img src={qrUrl} alt="Scan QR Code" className="w-40 h-40" />
-                </div>
-                <h3 className="text-lg font-bold">Scan to Open</h3>
-                <p className="text-indigo-100 text-sm mt-2">
-                  Open your phone camera and point it at this QR code to instantly launch Zenith.
-                </p>
-                
-                <div className="flex gap-2 mt-6">
+              {/* Primary Direct Install Action */}
+              {canInstall ? (
+                <section className="bg-indigo-600 rounded-3xl p-8 text-white text-center shadow-xl shadow-indigo-200">
+                  <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1M7 10l5 5 5-5M12 3v12" />
+                    </svg>
+                  </div>
+                  <h3 className="text-xl font-black">One-Tap Install</h3>
+                  <p className="text-indigo-100 text-sm mt-2 mb-6">
+                    Click below to install Zenith directly to your device. No menus, no hassle.
+                  </p>
                   <button 
-                    onClick={handleCopyLink}
-                    className="flex-1 py-3 bg-white/10 hover:bg-white/20 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all border border-white/20"
+                    onClick={handleDirectInstall}
+                    className="w-full py-4 bg-white text-indigo-600 font-black rounded-2xl hover:bg-indigo-50 transition-all shadow-lg active:scale-95"
                   >
-                    {copySuccess ? (
-                      <>
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
-                        Copied!
-                      </>
-                    ) : (
-                      <>
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
-                        Copy Link
-                      </>
-                    )}
+                    Install Now
                   </button>
-                  <button 
-                    onClick={handleNativeShare}
-                    className="flex-1 py-3 bg-indigo-500 hover:bg-indigo-400 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all shadow-lg"
-                  >
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" /></svg>
-                    Send to Phone
-                  </button>
-                </div>
-              </section>
+                </section>
+              ) : (
+                <section className="bg-indigo-600 rounded-3xl p-8 text-white text-center shadow-xl shadow-indigo-200">
+                  <div className="bg-white p-3 rounded-2xl inline-block shadow-inner mb-4">
+                    <img src={qrUrl} alt="Scan QR Code" className="w-40 h-40" />
+                  </div>
+                  <h3 className="text-lg font-bold">Scan to Open</h3>
+                  <p className="text-indigo-100 text-sm mt-2">
+                    Open your phone camera and point it at this QR code to instantly launch Zenith.
+                  </p>
+                  
+                  <div className="flex gap-2 mt-6">
+                    <button 
+                      onClick={handleCopyLink}
+                      className="flex-1 py-3 bg-white/10 hover:bg-white/20 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all border border-white/20"
+                    >
+                      {copySuccess ? 'Copied!' : 'Copy Link'}
+                    </button>
+                    <button 
+                      onClick={handleNativeShare}
+                      className="flex-1 py-3 bg-indigo-500 hover:bg-indigo-400 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all shadow-lg"
+                    >
+                      Send to Phone
+                    </button>
+                  </div>
+                </section>
+              )}
 
-              {/* Install Steps */}
+              {/* Install Steps Manual */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <section className="bg-slate-50 p-5 rounded-2xl border border-slate-200">
                   <div className="flex items-center gap-2 mb-3">
                     <div className="w-6 h-6 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center text-[10px] font-black">A</div>
-                    <h3 className="text-sm font-bold text-slate-800">Android</h3>
+                    <h3 className="text-sm font-bold text-slate-800">Android Chrome</h3>
                   </div>
                   <ul className="text-xs text-slate-500 space-y-2 leading-relaxed">
                     <li>1. Open link in <strong>Chrome</strong>.</li>
-                    <li>2. Tap <strong>Menu (⋮)</strong>.</li>
-                    <li>3. Select <strong>"Install App"</strong>.</li>
+                    <li>2. Look for the <strong>"Install"</strong> prompt.</li>
+                    <li>3. Or tap <strong>Menu (⋮)</strong> > <strong>Install</strong>.</li>
                   </ul>
                 </section>
 
                 <section className="bg-slate-50 p-5 rounded-2xl border border-slate-200">
                   <div className="flex items-center gap-2 mb-3">
                     <div className="w-6 h-6 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center text-[10px] font-black">i</div>
-                    <h3 className="text-sm font-bold text-slate-800">iPhone</h3>
+                    <h3 className="text-sm font-bold text-slate-800">iPhone Safari</h3>
                   </div>
                   <ul className="text-xs text-slate-500 space-y-2 leading-relaxed">
                     <li>1. Open link in <strong>Safari</strong>.</li>
@@ -195,13 +223,6 @@ const Header: React.FC<HeaderProps> = ({ onOpenAI, user, onLogin, onLogout, isSy
                   </ul>
                 </section>
               </div>
-
-              <section className="bg-slate-900 rounded-2xl p-5 text-slate-400">
-                <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Why Install?</h4>
-                <p className="text-xs leading-relaxed">
-                  Zenith becomes a real app on your phone. You get <strong>offline support</strong>, a home screen <strong>launcher icon</strong>, and a distraction-free <strong>full-screen experience</strong> without the browser URL bar.
-                </p>
-              </section>
             </div>
 
             <div className="p-6 bg-white border-t border-slate-100 shrink-0">

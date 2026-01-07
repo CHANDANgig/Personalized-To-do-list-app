@@ -25,17 +25,38 @@ const App: React.FC = () => {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [isStandalone, setIsStandalone] = useState(false);
 
-  const storageKey = user ? `zenith_habits_${user.id}` : 'zenith_habits_guest';
-  const metricsKey = user ? `zenith_metrics_${user.id}` : 'zenith_metrics_guest';
-
+  // PWA Install Logic
   useEffect(() => {
+    const handleBeforeInstallPrompt = (e: Event) => {
+      // Prevent the mini-infobar from appearing on mobile
+      e.preventDefault();
+      // Stash the event so it can be triggered later.
+      setDeferredPrompt(e);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
     const checkStandalone = () => {
       const isStandaloneMode = window.matchMedia('(display-mode: standalone)').matches 
         || (window.navigator as any).standalone;
       setIsStandalone(isStandaloneMode);
     };
     checkStandalone();
+
+    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
   }, []);
+
+  const handleInstallClick = async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') {
+      setDeferredPrompt(null);
+    }
+  };
+
+  const storageKey = user ? `zenith_habits_${user.id}` : 'zenith_habits_guest';
+  const metricsKey = user ? `zenith_metrics_${user.id}` : 'zenith_metrics_guest';
 
   useEffect(() => {
     const savedHabits = localStorage.getItem(storageKey);
@@ -119,7 +140,7 @@ const App: React.FC = () => {
         onLogout={() => setUser(null)}
         isSyncing={isSyncing}
         canInstall={!!deferredPrompt && !isStandalone}
-        onInstall={() => deferredPrompt?.prompt()}
+        onInstall={handleInstallClick}
       />
       
       <main className="max-w-[1400px] mx-auto px-4 py-8 space-y-12">
@@ -210,7 +231,7 @@ const App: React.FC = () => {
 
       </main>
 
-      <InstallBanner isVisible={!!deferredPrompt && !isStandalone} onInstall={() => deferredPrompt?.prompt()} />
+      <InstallBanner isVisible={!!deferredPrompt && !isStandalone} onInstall={handleInstallClick} />
 
       {isAIOpen && (
         <AIPanel habits={habits} metrics={metrics} onClose={() => setIsAIOpen(false)} />

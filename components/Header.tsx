@@ -30,12 +30,14 @@ const Header: React.FC<HeaderProps> = ({ onOpenAI, user, onLogin, onLogout, isSy
       try {
         await navigator.share({
           title: 'Zenith Task Planner',
-          text: 'Check out this AI-powered task planner!',
+          text: 'Check out my high-performance habit tracker!',
           url: currentUrl,
         });
       } catch (err) {
         console.log('Error sharing:', err);
       }
+    } else {
+      handleCopyLink();
     }
   };
 
@@ -74,7 +76,7 @@ const Header: React.FC<HeaderProps> = ({ onOpenAI, user, onLogin, onLogout, isSy
             {canInstall && (
               <button 
                 onClick={onInstall}
-                className="hidden sm:flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-xl text-xs font-bold hover:bg-emerald-700 transition-all shadow-md shadow-emerald-100 animate-pulse"
+                className="hidden sm:flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-xl text-xs font-bold hover:bg-emerald-700 transition-all shadow-md shadow-emerald-100"
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1M7 10l5 5 5-5M12 3v12" />
@@ -142,7 +144,7 @@ const Header: React.FC<HeaderProps> = ({ onOpenAI, user, onLogin, onLogout, isSy
               <div className="flex justify-between items-start">
                 <div>
                   <h2 className="text-2xl font-black text-slate-900 leading-tight">Install Zenith</h2>
-                  <p className="text-slate-500 text-sm mt-1">Choose the easiest way to get Zenith on your phone.</p>
+                  <p className="text-slate-500 text-sm mt-1">Access Zenith from your home screen.</p>
                 </div>
                 <button onClick={() => setShowHelp(false)} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
                   <svg className="w-6 h-6 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
@@ -151,7 +153,17 @@ const Header: React.FC<HeaderProps> = ({ onOpenAI, user, onLogin, onLogout, isSy
             </div>
 
             <div className="flex-1 overflow-y-auto p-6 space-y-8 hide-scrollbar">
-              {/* Primary Direct Install Action */}
+              
+              <section className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex gap-3">
+                <div className="shrink-0 w-8 h-8 bg-amber-100 text-amber-600 rounded-lg flex items-center justify-center">
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                </div>
+                <div className="text-xs text-amber-800 leading-relaxed">
+                  <p className="font-bold mb-1">Preview Environment Limitation</p>
+                  This link is private to your current browser session. To open it on your phone, you must first <strong>Deploy</strong> the app to a public URL.
+                </div>
+              </section>
+
               {canInstall ? (
                 <section className="bg-indigo-600 rounded-3xl p-8 text-white text-center shadow-xl shadow-indigo-200">
                   <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
@@ -159,15 +171,15 @@ const Header: React.FC<HeaderProps> = ({ onOpenAI, user, onLogin, onLogout, isSy
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1M7 10l5 5 5-5M12 3v12" />
                     </svg>
                   </div>
-                  <h3 className="text-xl font-black">One-Tap Install</h3>
+                  <h3 className="text-xl font-black">Ready to Install</h3>
                   <p className="text-indigo-100 text-sm mt-2 mb-6">
-                    Click below to install Zenith directly to your device. No menus, no hassle.
+                    Launch the native installation process below.
                   </p>
                   <button 
                     onClick={handleDirectInstall}
                     className="w-full py-4 bg-white text-indigo-600 font-black rounded-2xl hover:bg-indigo-50 transition-all shadow-lg active:scale-95"
                   >
-                    Install Now
+                    Install Zenith
                   </button>
                 </section>
               ) : (
@@ -175,9 +187,9 @@ const Header: React.FC<HeaderProps> = ({ onOpenAI, user, onLogin, onLogout, isSy
                   <div className="bg-white p-3 rounded-2xl inline-block shadow-inner mb-4">
                     <img src={qrUrl} alt="Scan QR Code" className="w-40 h-40" />
                   </div>
-                  <h3 className="text-lg font-bold">Scan to Open</h3>
+                  <h3 className="text-lg font-bold">Open on Phone</h3>
                   <p className="text-indigo-100 text-sm mt-2">
-                    Open your phone camera and point it at this QR code to instantly launch Zenith.
+                    Scan this code to test the mobile experience (Only works if deployed).
                   </p>
                   
                   <div className="flex gap-2 mt-6">
@@ -191,13 +203,12 @@ const Header: React.FC<HeaderProps> = ({ onOpenAI, user, onLogin, onLogout, isSy
                       onClick={handleNativeShare}
                       className="flex-1 py-3 bg-indigo-500 hover:bg-indigo-400 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all shadow-lg"
                     >
-                      Send to Phone
+                      Share Link
                     </button>
                   </div>
                 </section>
               )}
 
-              {/* Install Steps Manual */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <section className="bg-slate-50 p-5 rounded-2xl border border-slate-200">
                   <div className="flex items-center gap-2 mb-3">
@@ -206,8 +217,7 @@ const Header: React.FC<HeaderProps> = ({ onOpenAI, user, onLogin, onLogout, isSy
                   </div>
                   <ul className="text-xs text-slate-500 space-y-2 leading-relaxed">
                     <li>1. Open link in <strong>Chrome</strong>.</li>
-                    <li>2. Look for the <strong>"Install"</strong> prompt.</li>
-                    <li>3. Or tap <strong>Menu (⋮)</strong> > <strong>Install</strong>.</li>
+                    <li>2. Tap <strong>Menu (⋮)</strong> > <strong>Install app</strong>.</li>
                   </ul>
                 </section>
 
